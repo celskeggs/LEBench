@@ -1092,10 +1092,14 @@ void recv_test(struct timespec *timeArray, int iter, int *i) {
 
 }
 
+#define SELECTIVE(test) do { if (selection == NULL || !strcmp(selection, info.name)) { test; } } while (0);
+
 int main(int argc, char *argv[])
 {
+	char *selection = getenv("LEBENCH_SELECT");
 	home = getenv("LEBENCH_DIR");
-	
+	if (home == NULL){printf("no $LEBENCH_DIR\n");return 1;}
+
 	output_fn = (char *)malloc(500*sizeof(char));
 	strcpy(output_fn, home);
 	strcat(output_fn, OUTPUT_FN);
@@ -1106,7 +1110,7 @@ int main(int argc, char *argv[])
 
 	struct timespec startTime, endTime;
 	clock_gettime(CLOCK_MONOTONIC, &startTime);
-	if (argc != 3){printf("Invalid arguments, gave %d not 3",argc);return(0);}
+	if (argc != 3){printf("Invalid arguments, gave %d not 3\n",argc);return 1;}
 	char *iteration = argv[1];
 	char *str_os_name = argv[2];
 	FILE *fp;
@@ -1148,16 +1152,16 @@ int main(int argc, char *argv[])
 	sleep(60);
 	info.iter = BASE_ITER * 100;
 	info.name = "ref";
-	one_line_test(fp, copy, ref_test, &info);
+	SELECTIVE(one_line_test(fp, copy, ref_test, &info));
 
 	info.iter = 100;
 	info.name = "cpu";
-	one_line_test(fp, copy, cpu_test, &info);
+	SELECTIVE(one_line_test(fp, copy, cpu_test, &info));
 
 
 	info.iter = BASE_ITER * 100;
 	info.name = "getpid";
-	one_line_test(fp, copy, getpid_test, &info);
+	SELECTIVE(one_line_test(fp, copy, getpid_test, &info));
 
 
 	
@@ -1166,7 +1170,7 @@ int main(int argc, char *argv[])
 	/*****************************************/
 	info.iter = BASE_ITER * 10;
 	info.name = "context siwtch";
-	one_line_test(fp, copy, context_switch_test, &info);
+	SELECTIVE(one_line_test(fp, copy, context_switch_test, &info));
 
 
 	/*****************************************/
@@ -1178,11 +1182,11 @@ int main(int argc, char *argv[])
 	printf("curr iter limit: %d.\n", curr_iter_limit);
 	info.iter = BASE_ITER * 10;
 	info.name = "send";
-	one_line_test_v2(fp, copy, send_test, &info);
+	SELECTIVE(one_line_test_v2(fp, copy, send_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "recv";
-	one_line_test_v2(fp, copy, recv_test, &info);
+	SELECTIVE(one_line_test_v2(fp, copy, recv_test, &info));
 	
 
 	msg_size = 96000;	// This size 96000 would cause blocking on older kernels!
@@ -1191,11 +1195,11 @@ int main(int argc, char *argv[])
 	printf("curr iter limit: %d.\n", curr_iter_limit);
 	info.iter = BASE_ITER;
 	info.name = "big send";
-	one_line_test_v2(fp, copy, send_test, &info);
+	SELECTIVE(one_line_test_v2(fp, copy, send_test, &info));
 		
 	info.iter = BASE_ITER;
 	info.name = "big recv";
-	one_line_test_v2(fp, copy, recv_test, &info);
+	SELECTIVE(one_line_test_v2(fp, copy, recv_test, &info));
 	
 
 	/*****************************************/
@@ -1203,11 +1207,11 @@ int main(int argc, char *argv[])
 	/*****************************************/
 	info.iter = BASE_ITER * 2;
 	info.name = "fork";
-	two_line_test(fp, copy, forkTest, &info);
+	SELECTIVE(two_line_test(fp, copy, forkTest, &info));
 	
 	info.iter = BASE_ITER * 5;
 	info.name = "thr create";
-	two_line_test(fp, copy, threadTest, &info);
+	SELECTIVE(two_line_test(fp, copy, threadTest, &info));
 
 
 	int page_count = 6000;
@@ -1218,7 +1222,7 @@ int main(int argc, char *argv[])
 	
 	info.iter = BASE_ITER / 2;	
 	info.name = "big fork";
-	two_line_test(fp, copy, forkTest, &info);
+	SELECTIVE(two_line_test(fp, copy, forkTest, &info));
 
 	for (int i = 0; i < page_count; i++) {
 		munmap(pages[i], PAGE_SIZE);
@@ -1233,7 +1237,7 @@ int main(int argc, char *argv[])
 	
 	info.iter = BASE_ITER / 2;	
 	info.name = "huge fork";
-	two_line_test(fp, copy, forkTest, &info);
+	SELECTIVE(two_line_test(fp, copy, forkTest, &info));
 
 	for (int i = 0; i < page_count; i++) {
 		munmap(pages1[i], PAGE_SIZE);
@@ -1250,24 +1254,24 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER * 10;
 	info.name = "small write";
-	one_line_test(fp, copy, write_test, &info);
+	SELECTIVE(one_line_test(fp, copy, write_test, &info));
       
 	info.iter = BASE_ITER * 10; 
 	info.name = "small read";
 	read_warmup();
-	one_line_test(fp, copy, read_test, &info);
+	SELECTIVE(one_line_test(fp, copy, read_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "small mmap";
-	one_line_test(fp, copy, mmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, mmap_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "small munmap";
-	one_line_test(fp, copy, munmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, munmap_test, &info));
 
 	info.iter = BASE_ITER * 5;
 	info.name = "small page fault";
-	one_line_test(fp, copy, page_fault_test, &info);
+	SELECTIVE(one_line_test(fp, copy, page_fault_test, &info));
 
 	/****** MID ******/
 	file_size = PAGE_SIZE * 10;
@@ -1275,24 +1279,24 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER * 10;
 	info.name = "mid write";
-	one_line_test(fp, copy, write_test, &info);
+	SELECTIVE(one_line_test(fp, copy, write_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "mid read";
 	read_warmup();
-	one_line_test(fp, copy, read_test, &info);
+	SELECTIVE(one_line_test(fp, copy, read_test, &info));
 
 	info.iter = BASE_ITER * 10;
 	info.name = "mid mmap";
-	one_line_test(fp, copy, mmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, mmap_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "mid munmap";
-	one_line_test(fp, copy, munmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, munmap_test, &info));
 
 	info.iter = BASE_ITER * 5;
 	info.name = "mid page fault";
-	one_line_test(fp, copy, page_fault_test, &info);
+	SELECTIVE(one_line_test(fp, copy, page_fault_test, &info));
 
 	/****** BIG ******/
 	file_size = PAGE_SIZE * 1000;	
@@ -1300,24 +1304,24 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER / 2;
 	info.name = "big write";
-	one_line_test(fp, copy, write_test, &info);
+	SELECTIVE(one_line_test(fp, copy, write_test, &info));
 	
 	info.iter = BASE_ITER;
 	info.name = "big read";
 	read_warmup();
-	one_line_test(fp, copy, read_test, &info);
+	SELECTIVE(one_line_test(fp, copy, read_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "big mmap";
-	one_line_test(fp, copy, mmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, mmap_test, &info));
 	
 	info.iter = BASE_ITER / 4;
 	info.name = "big munmap";
-	one_line_test(fp, copy, munmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, munmap_test, &info));
 	
 	info.iter = BASE_ITER * 5;
 	info.name = "big page fault";
-	one_line_test(fp, copy, page_fault_test, &info);
+	SELECTIVE(one_line_test(fp, copy, page_fault_test, &info));
 
        /****** HUGE ******/
 	file_size = PAGE_SIZE * 10000;	
@@ -1325,23 +1329,23 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER / 4;
 	info.name = "huge write";
-	one_line_test(fp, copy, write_test, &info);
+	SELECTIVE(one_line_test(fp, copy, write_test, &info));
 
 	info.iter = BASE_ITER;
 	info.name = "huge read";
-	one_line_test(fp, copy, read_test, &info);
+	SELECTIVE(one_line_test(fp, copy, read_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "huge mmap";
-	one_line_test(fp, copy, mmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, mmap_test, &info));
 	
 	info.iter = BASE_ITER / 4; 
 	info.name = "huge munmap";
-	one_line_test(fp, copy, munmap_test, &info);
+	SELECTIVE(one_line_test(fp, copy, munmap_test, &info));
 
 	info.iter = BASE_ITER * 5;
 	info.name = "huge page fault";
-	one_line_test(fp, copy, page_fault_test, &info);
+	SELECTIVE(one_line_test(fp, copy, page_fault_test, &info));
 
 	/*****************************************/
 	/*              WRITE & READ             */
@@ -1352,15 +1356,15 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER * 10;
 	info.name = "select";
-	one_line_test(fp, copy, select_test, &info);
+	SELECTIVE(one_line_test(fp, copy, select_test, &info));
 	
 	info.iter = BASE_ITER * 10;
 	info.name = "poll";
-	one_line_test(fp, copy, poll_test, &info);
+	SELECTIVE(one_line_test(fp, copy, poll_test, &info));
 		
 	info.iter = BASE_ITER * 10;
 	info.name = "epoll";
-	one_line_test(fp, copy, epoll_test, &info);
+	SELECTIVE(one_line_test(fp, copy, epoll_test, &info));
 	
 
 	/****** BIG ******/
@@ -1368,15 +1372,15 @@ int main(int argc, char *argv[])
 
 	info.iter = BASE_ITER;
 	info.name = "select big";
-	one_line_test(fp, copy, select_test, &info);
+	SELECTIVE(one_line_test(fp, copy, select_test, &info));
 
 	info.iter = BASE_ITER;
 	info.name = "poll big";
-	one_line_test(fp, copy, poll_test, &info);
+	SELECTIVE(one_line_test(fp, copy, poll_test, &info));
 
 	info.iter = BASE_ITER;
 	info.name = "epoll big";
-	one_line_test(fp, copy, epoll_test, &info);
+	SELECTIVE(one_line_test(fp, copy, epoll_test, &info));
 
 	fclose(fp);
 	if (!isFirstIteration)
